@@ -1,0 +1,110 @@
+WITH Base_Clean AS (
+    SELECT 
+        -- Vehicle Identifiers
+        UPPER(TRIM(MAKE))  AS MAKE,
+        UPPER(TRIM(MODEL)) AS MODEL,
+        TRY_TO_NUMBER(YEAR) AS VEHICLE_YEAR,
+        STATE AS REGION,
+
+        -- Numeric conversions
+        TRY_TO_NUMBER(NULLIF(REGEXP_REPLACE(SELLINGPRICE, '[^0-9.-]', ''), '')) AS SELLING_PRICE,
+        TRY_TO_NUMBER(NULLIF(REGEXP_REPLACE(ODOMETER, '[^0-9.-]', ''), '')) AS MILEAGE,
+
+        -- Vehicle age
+        (YEAR(CURRENT_DATE()) - TRY_TO_NUMBER(YEAR)) AS VEHICLE_AGE,
+
+        -- Mileage groupings
+        CASE 
+            WHEN TRY_TO_NUMBER(ODOMETER) < 20000 THEN 'Low (0–20K)'
+            WHEN TRY_TO_NUMBER(ODOMETER) < 60000 THEN 'Moderate (20K–60K)'
+            WHEN TRY_TO_NUMBER(ODOMETER) < 100000 THEN 'High (60K–100K)'
+            ELSE 'Very High (100K+)'
+        END AS MILEAGE_CATEGORY,
+
+        -- Clean timestamp
+        TRY_TO_TIMESTAMP_NTZ(
+            TRIM(REGEXP_REPLACE(SALEDATE, 'GMT.*', '')),
+            'DY MON DD YYYY HH24:MI:SS'
+        ) AS SALE_TIMESTAMP
+
+    FROM MOTORS.CARS.SALES
+),
+
+Computed_Metrics AS (
+    SELECT
+        *,
+        -- Units (assume 1 per row)
+        1 AS UNITS_SOLD,
+
+        -- Total revenue
+        (SELLING_PRICE * 1) AS TOTAL_REVENUE,
+
+        -- Approximate profit margin
+        CASE
+            WHEN SELLING_PRICE >= 40000 THEN 25.0
+            WHEN SELLING_PRICE BETWEEN 20000 AND 39999 THEN 15.0
+            WHEN SELLING_PRICE BETWEEN 10000 AND 19999 THEN 10.0
+            ELSE 5.0
+        END AS PROFIT_MARGIN,
+
+        -- Extract date/time breakdowns
+        TO_DATE(SALE_TIMESTAMP) AS SALE_DATE,
+        YEAR(SALE_TIMESTAMP)    AS SALE_YEAR,
+        MONTH(SALE_TIMESTAMP)   AS SALE_MONTH,
+        QUARTER(SALE_TIMESTAMP) AS SALE_QUARTER,
+
+        TO_VARCHAR(SALE_TIMESTAMP, 'HH24:MI:SS') AS SALE_TIME,
+
+        -- Seasonal categorization
+        CASE 
+            WHEN MONTH(SALE_TIMESTAMP) IN (12, 1, 2) THEN 'Winter'
+            WHEN MONTH(SALE_TIMESTAMP) IN (3, 4, 5) THEN 'Spring'
+            WHEN MONTH(SALE_TIMESTAMP) IN (6, 7, 8) THEN 'Summer'
+            WHEN MONTH(SALE_TIMESTAMP) IN (9, 10, 11) THEN 'Autumn'
+            ELSE 'Unknown'
+        END AS SALE_SEASON
+
+    FROM Base_Clean
+),
+
+Performance_Tiers AS (
+    SELECT
+        *,
+        CASE
+            WHEN PROFIT_MARGIN >= 20 THEN 'High Margin'
+            WHEN PROFIT_MARGIN BETWEEN 10 AND 19.99 THEN 'Medium Margin'
+            WHEN PROFIT_MARGIN BETWEEN 0 AND 9.99 THEN 'Low Margin'
+            ELSE 'Unknown'
+        END AS PERFORMANCE_TIER
+    FROM Computed_Metrics
+)
+
+-- ============================================================
+-- FINAL OUTPUT FOR DASHBOARDS / PIVOT TABLES / ANALYTICS
+-- ============================================================
+SELECT
+    SALE_YEAR,
+    SALE_QUARTER,
+    SALE_MONTH,
+    SALE_SEASON,
+    MAKE,
+    MODEL,
+    REGION,
+    VEHICLE_YEAR,
+    VEHICLE_AGE,
+    MILEAGE,
+    MILEAGE_CATEGORY,
+    PERFORMANCE_TIER,
+
+    COUNT(*) AS TRANSACTIONS,
+    SUM(TOTAL_REVENUE) AS TOTAL_REVENUE,
+    AVG(SELLING_PRICE) AS AVG_SELL_PRICE,
+    AVG(PROFIT_MARGIN) AS AVG_PROFIT_MARGIN,
+    SUM(UNITS_SOLD) AS TOTAL_UNITS
+FROM Performance_Tiers
+GROUP BY
+    SALE_YEAR, SALE_QUARTER, SALE_MONTH, SALE_SEASON,
+    MAKE, MODEL, REGION, VEHICLE_YEAR, VEHICLE_AGE,
+    MILEAGE, MILEAGE_CATEGORY, PERFORMANCE_TIER
+ORDER BY
+    SALE_YEAR DESC, SALE_QUARTER, SALE_MONTH, MAKE, MODEL;
