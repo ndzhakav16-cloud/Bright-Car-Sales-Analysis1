@@ -16,10 +16,16 @@ Business Insights for a New Head of Sales using Historical Car Sales Data from B
 - To design interactive dashboards*and visualizations for decision-making.  
 
 # Tech Tools Used
-- Microsoft Excel - Data cleaning, pivot tables, trend analysis 
-- Power BI -  Interactive dashboard creation and visualization 
--SQL - Data preprocessing and exploratory analysis 
-- GitHub -  Project version control and portfolio documentation
+| Tool                     | Purpose                                       |
+| ------------------------ | --------------------------------------------- |
+| SQL                      | Data extraction, querying, and transformation |
+| Excel                    | Data cleaning and exploratory analysis        |
+| Google Looker Studio     | Interactive dashboard creation                |
+| Miro                     | Process mapping and planning                  |
+| Gantt Chart              | For Project Planning and Scheduling           |
+| PowerPoint               | Presenting insights and recommendations       |    
+| GitHub                   | Version control and portfolio documentation   |
+
 
   # Summary of Report
 * Insights Discovered:
