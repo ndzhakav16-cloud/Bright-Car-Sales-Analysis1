@@ -20,7 +20,7 @@ Business Insights for a New Head of Sales using Historical Car Sales Data from B
 | ------------------------ | --------------------------------------------- |
 | SQL                      | Data extraction, querying, and transformation |
 | Excel                    | Data cleaning and exploratory analysis        |
-| Google Looker Studio     | Interactive dashboard creation                |
+|PowerBI                   | Interactive dashboard creation                |
 | Miro                     | Process mapping and planning                  |
 | Gantt Chart              | For Project Planning and Scheduling           |
 | PowerPoint               | Presenting insights and recommendations       |    
